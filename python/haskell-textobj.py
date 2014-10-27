@@ -203,7 +203,7 @@ def find_block(lines, index):
 
     return start_index, end_index
 
-if __name__ == "__main__":
+if __name__ == "__main__" and 'vim' not in sys.modules:
     lines = open(sys.argv[1]).readlines()
     for ind in xrange(len(lines)):
         start, end = find_block(lines, ind)
