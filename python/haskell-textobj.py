@@ -86,7 +86,12 @@ def is_decl(start, end, lines):
 
 def extend_typesig(start_line, end_line, lines):
     start2, end2 = find_block(lines, start_line - 1)
-    if "::" in lines[start2].split()[1]:
+
+    first_line = start2
+    while is_comment(lines[first_line]):
+        first_line += 1
+
+    if "::" in lines[first_line].split()[1]:
         return start2, end_line
     else:
         return start_line, end_line
@@ -129,7 +134,8 @@ def has_start_block(line):
 
 def is_comment(line):
     line = line.strip()
-    return line.startswith("--") or line.startswith("{-")
+    is_pragma = line.startswith("{-#")
+    return line.startswith("--") or (line.startswith("{-") and not is_pragma)
 
 
 def find_block(lines, index):
