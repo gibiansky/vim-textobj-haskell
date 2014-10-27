@@ -42,8 +42,48 @@ def select_haskell_block(lines, cursor, around):
         - Select all import statements in a block.
         - Select all clauses of a function as well as the type signature.
     """
-    start_line, end_line = find_block(lines, cursor, around)
+    start_line, end_line = find_block(lines, cursor)
+    if around:
+        # Take care of expanding imports.
+        while is_import(start_line, end_line, lines):
+            start_line, end_line = extend_imports(start_line, end_line, lines)
+
+        # Take care of extending pattern matches.
+        if is_decl(start_line, end_line, lines):
+            start_line, end_line = extend_typesig(start_line, end_line, lines)
     vim_return(start_line, end_line, lines)
+
+
+def extend_imports(start_line, end_line, lines):
+    start2, end2 = find_block(lines, start_line - 1)
+    if start2 != start_line and is_import(start2, end2, lines):
+        return start2, end_line
+
+    start3, end3 = find_block(lines, end_line + 1)
+    if end3 != end_line and is_import(start3, end3, lines):
+        return start_line, end3
+
+
+def is_import(start, end, lines):
+    return lines[start].strip().startswith("import")
+
+
+def is_decl(start, end, lines):
+    line = lines[start].strip()
+    decl = "=" in line
+    if not decl:
+        return False
+
+    if any(tok in line for tok in ["data", "newtype"]):
+        return False
+
+    return True
+
+
+def extend_typesig(start_line, end_line, lines):
+    start2, end2 = find_block(lines, start_line - 1)
+    if "::" in lines[start2].split()[1]:
+        return start2, end_line
 
 
 def indent_level(line):
@@ -86,7 +126,7 @@ def is_comment(line):
     return line.startswith("--") or line.startswith("{-")
 
 
-def find_block(lines, index, around=False):
+def find_block(lines, index):
     """Find a block that the cursor is in.
 
     Arguments:
