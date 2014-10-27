@@ -65,28 +65,32 @@ def select_haskell_block(lines, cursor, around):
 
 
 def extend_decls(start_line, end_line, lines):
-    start2, end2 = find_block(lines, start_line - 1)
-    if start2 != start_line and is_decl(start2, end2, lines):
-        if lines[start_line].startswith(lines[start2].split()[0]):
-            return start2, end_line
+    if start_line - 1 >= 0:
+        start2, end2 = find_block(lines, start_line - 1)
+        if start2 != start_line and is_decl(start2, end2, lines):
+            if lines[start_line].startswith(lines[start2].split()[0]):
+                return start2, end_line
 
-    start3, end3 = find_block(lines, end_line + 1)
-    if end3 != end_line and is_decl(start3, end3, lines):
-        if lines[start_line].startswith(lines[start3].split()[0]):
-            return start_line, end3
+    if end_line + 1 <= len(lines) - 1:
+        start3, end3 = find_block(lines, end_line + 1)
+        if end3 != end_line and is_decl(start3, end3, lines):
+            if lines[start_line].startswith(lines[start3].split()[0]):
+                return start_line, end3
 
     # No more cases
     return None
 
 
 def extend_imports(start_line, end_line, lines):
-    start2, end2 = find_block(lines, start_line - 1)
-    if start2 != start_line and is_import(start2, end2, lines):
-        return start2, end_line
+    if start_line - 1 >= 0:
+        start2, end2 = find_block(lines, start_line - 1)
+        if start2 != start_line and is_import(start2, end2, lines):
+            return start2, end_line
 
-    start3, end3 = find_block(lines, end_line + 1)
-    if end3 != end_line and is_import(start3, end3, lines):
-        return start_line, end3
+    if end_line + 1 <= len(lines) - 1:
+        start3, end3 = find_block(lines, end_line + 1)
+        if end3 != end_line and is_import(start3, end3, lines):
+            return start_line, end3
 
     # Signal no more imports to add
     return None
