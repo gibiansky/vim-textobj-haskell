@@ -45,17 +45,38 @@ def select_haskell_block(lines, cursor, around):
     start_line, end_line = find_block(lines, cursor - 1)
     if around:
         # Take care of expanding imports.
-        while is_import(start_line, end_line, lines):
+        if is_import(start_line, end_line, lines):
             new = extend_imports(start_line, end_line, lines)
-            if new is not None:
+            while new is not None:
                 start_line, end_line = new
-            else:
-                break
+                new = extend_imports(start_line, end_line, lines)
 
-        # Take care of extending pattern matches.
+        # Take care of expanding pattern matches.
+        if is_decl(start_line, end_line, lines):
+            new = extend_decls(start_line, end_line, lines)
+            while new is not None:
+                start_line, end_line = new
+                new = extend_decls(start_line, end_line, lines)
+
+        # Add a type signature if necessary.
         if is_decl(start_line, end_line, lines):
             start_line, end_line = extend_typesig(start_line, end_line, lines)
     vim_return(start_line, end_line, lines)
+
+
+def extend_decls(start_line, end_line, lines):
+    start2, end2 = find_block(lines, start_line - 1)
+    if start2 != start_line and is_decl(start2, end2, lines):
+        if lines[start_line].startswith(lines[start2].split()[0]):
+            return start2, end_line
+
+    start3, end3 = find_block(lines, end_line + 1)
+    if end3 != end_line and is_decl(start3, end3, lines):
+        if lines[start_line].startswith(lines[start3].split()[0]):
+            return start_line, end3
+
+    # No more cases
+    return None
 
 
 def extend_imports(start_line, end_line, lines):
@@ -66,6 +87,9 @@ def extend_imports(start_line, end_line, lines):
     start3, end3 = find_block(lines, end_line + 1)
     if end3 != end_line and is_import(start3, end3, lines):
         return start_line, end3
+
+    # Signal no more imports to add
+    return None
 
 
 def is_import(start, end, lines):
