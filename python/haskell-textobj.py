@@ -42,11 +42,15 @@ def select_haskell_block(lines, cursor, around):
         - Select all import statements in a block.
         - Select all clauses of a function as well as the type signature.
     """
-    start_line, end_line = find_block(lines, cursor)
+    start_line, end_line = find_block(lines, cursor - 1)
     if around:
         # Take care of expanding imports.
         while is_import(start_line, end_line, lines):
-            start_line, end_line = extend_imports(start_line, end_line, lines)
+            new = extend_imports(start_line, end_line, lines)
+            if new is not None:
+                start_line, end_line = new
+            else:
+                break
 
         # Take care of extending pattern matches.
         if is_decl(start_line, end_line, lines):
@@ -84,6 +88,8 @@ def extend_typesig(start_line, end_line, lines):
     start2, end2 = find_block(lines, start_line - 1)
     if "::" in lines[start2].split()[1]:
         return start2, end_line
+    else:
+        return start_line, end_line
 
 
 def indent_level(line):
